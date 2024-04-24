@@ -32,6 +32,7 @@ interface CharacterData {
 
 interface SearchResult {
   displayName: string;
+  displayNameCode: number;
   membershipId: string;
   membershipType: number;
   emblemPath: string;
@@ -66,11 +67,14 @@ const PlayerCard = ({
       }}
     >
       <div className="flex flex-grow items-center justify-between pr-2">
-        <div className="py-2 text-2xl font-bold text-white">
-          {player.displayName}
+        <div className="py-2 text-start">
+          <div className="text-2xl font-bold leading-none text-white">
+            {player.displayName}
+          </div>
+          <div className="text-xl text-white/30">#{player.displayNameCode}</div>
         </div>
         <div className="flex items-start py-2 text-4xl font-bold text-[#FFDA88]">
-          <span className="mb-auto text-lg leading-none">✧</span>
+          <span className="mb-auto text-xl leading-none">✧</span>
           {player.light}
         </div>
       </div>
@@ -113,7 +117,7 @@ export default function PlayerSearch() {
       </div>
 
       {playerList.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 pt-4">
           {playerList.map((player) => (
             <PlayerCard
               key={player.membershipId}
@@ -130,6 +134,11 @@ export default function PlayerSearch() {
           ))}
         </div>
       )}
+      {userActivityMutation.data?.map((act, index) => {
+        return <div key={index}>
+          {act.values.timePlayedSeconds.basic.displayValue}
+        </div>;
+      })}
     </div>
   );
 }

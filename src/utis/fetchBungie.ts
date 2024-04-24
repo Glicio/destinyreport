@@ -25,24 +25,32 @@ async function fetchBungie<T>({
   const HEADERS: HeadersInit = {
     "X-API-Key": process.env.BUNGIE_API_KEY,
   };
-  const req = await fetch(`${BUNGIE_API_ROOT}${endpoint}`, {
-    headers: HEADERS,
-    method: data ? "POST" : "GET",
-    body: data ? JSON.stringify(data) : undefined,
-  });
-  const res = await req.json();
-
   try {
-    const parsed = bungieResponseParser.parse(res);
+    const req = await fetch(`${BUNGIE_API_ROOT}${endpoint}`, {
+      headers: HEADERS,
+      method: data ? "POST" : "GET",
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    const res = await req.json();
 
-    const { Response, ...rest } = parsed;
+    try {
+      const parsed = bungieResponseParser.parse(res);
 
-    return { ...rest, response: parsed.Response as T };
+      const { Response, ...rest } = parsed;
+
+      return { ...rest, response: parsed.Response as T };
+    } catch (e) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error parsing Bungie API response",
+      });
+    }
   } catch (e) {
+    console.error(e)
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "Error parsing Bungie API response",
-    });
+      message: "erro da bungie"
+    })
   }
 }
 

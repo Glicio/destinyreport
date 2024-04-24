@@ -91,12 +91,46 @@ interface UserName {
 }
 interface User {
   displayName: string;
+  displayNameCode: number;
   membershipId: string;
   membershipType: number;
   emblemPath: string;
   light: number;
   names: UserName[];
   characters?: CharacterData[] | undefined;
+}
+interface Activity {
+  period: string;
+  activityDetails: {
+    referenceId: number;
+    directorActivityHash: number;
+    instanceId: string;
+    mode: number;
+    modes: any[];
+    isPrivate: boolean;
+    membershipType: number;
+  };
+  values: {
+    assists: any;
+    completed: any;
+    deaths: any;
+    kills: any;
+    opponentsDefeated: any;
+    efficiency: any;
+    killsDeathsRatio: any;
+    killsDeathsAssists: any;
+    score: any;
+    activityDurationSeconds: any;
+    team: any;
+    completionReason: any;
+    fireteamId: any;
+    startSeconds: any;
+    timePlayedSeconds: {
+      basic: { value: number; displayValue: string };
+    };
+    playerCount: any;
+    teamScore: any;
+  };
 }
 
 export const userRouter = createTRPCRouter({
@@ -147,7 +181,8 @@ export const userRouter = createTRPCRouter({
         if (!displayName) continue;
 
         const characters = [] as CharacterData[];
-        for (const characterId of profileReq.response.profile.data.characterIds) {
+        for (const characterId of profileReq.response.profile.data
+          .characterIds) {
           const character = profileReq.response.characters.data[characterId];
 
           if (!character) continue;
@@ -175,6 +210,7 @@ export const userRouter = createTRPCRouter({
 
         users.push({
           displayName,
+          displayNameCode: result.bungieGlobalDisplayNameCode,
           membershipId,
           membershipType,
           emblemPath: emblemBackgroundPath,
@@ -195,20 +231,50 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      const history = await fetchBungie<{
-          activities: any[];
+      const onslaughtHashs = [
+        3439345485, //vostok
+        2295195925, //midtown
+        887771978, //mothyards
+      ];
+      const legendOnslaughterHashs = [
+        2064836415, //midtown
+        447898400, //mothyards
+        264092439, //vostok
+      ];
+      const { membershipId, membershipType, charactersIds } = input;
+
+      let activitiesList = [] as Activity[];
+      for (const characterId of charactersIds) {
+        if (!characterId) continue;
+        const history = await fetchBungie<{
+          activities: Activity[];
           characters: any[];
           equipment: any[];
           inventory: any[];
           progressions: any[];
           stats: any[];
           status: any[];
-      }>({
-        endpoint: `/Destiny2/${input.membershipType}/Account/${input.membershipId}/Character/${input.charactersIds[0]}/Stats/Activities/?mode=86&count=250`,
-      });
+        }>({
+          endpoint: `/Destiny2/${membershipType}/Account/${membershipId}/Character/${characterId}/Stats/Activities/?mode=86&count=250`,
+        });
+        const activities = history.response.activities;
+        if (!activities) continue;
+        const onslaughtActivities = activities.filter(
+          (activity) =>
+            onslaughtHashs.includes(activity.activityDetails.referenceId) ||
+            legendOnslaughterHashs.includes(
+              activity.activityDetails.referenceId,
+            ),
+        );
 
-      console.log(history.response.activities);
-
-      return history.response.activities;
+        activitiesList.push(...onslaughtActivities);
+      }
+      
+      // console.log(activitiesList);
+      return activitiesList.sort((a, b) => {
+        return (
+          new Date(b.period).getTime() - new Date(a.period).getTime()
+        );
+      })
     }),
 });

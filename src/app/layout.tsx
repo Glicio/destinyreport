@@ -28,11 +28,11 @@ export default function RootLayout({
       <head>
         <ColorSchemeScript />
       </head>
-      <MantineProvider>
-        <body className={`font-sans ${inter.variable}`}>
+      <body className={`font-sans ${inter.variable}`}>
+        <MantineProvider>
           <TRPCReactProvider>{children}</TRPCReactProvider>
-        </body>
-      </MantineProvider>
+        </MantineProvider>
+      </body>
     </html>
   );
 }
